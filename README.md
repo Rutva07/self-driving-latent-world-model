@@ -6,7 +6,7 @@ A complete, runnable research starter for **ego-centric, multi-agent, multimodal
 
 The repo contains: an offline synthetic simulator, a native **Waymo `tf.Example` TFRecord reader that does not require TensorFlow**, ego-centric preprocessing, a trainable latent transformer, a physics-based forecasting prior, two baselines, training with overfit safeguards, evaluation, checkpointing, visualizations, unit tests, a Docker setup, and reproducible experiments with genuine recorded outputs.
 
-> **Performance disclosure:** The reported resume numbers (85% short-horizon and 50% long-horizon prediction accuracy) have **not** been independently reproduced here, and the underlying threshold definition was not provided. Do not attribute the included synthetic results to Waymo. All validated metrics and limitations are in [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
+> **Evaluation status:** A synthetic-data training and test run is complete. Full Waymo GPU performance figures below are **planning targets**, not observed scores. The previously cited 85% short-horizon and 50% long-horizon accuracy figures have not been reproduced with a documented evaluation threshold. See [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) for recorded experiments.
 
 ## Quick start (no Waymo download required)
 
@@ -158,23 +158,39 @@ python scripts/evaluate.py \
 
 The included checkpoint, CSV history, full held-out test report and experiment notes correspond to this example. You may use a GPU with `--device cuda` (or automatically with `auto`). Training defaults for full WOMD are in `configs/train.yaml`: 128-dimensional model, 16 scene latents, 6 trajectories, batch size 24, 100 epochs, EMA, and 18-epoch early stopping patience. **They are starting hyperparameters, not independently validated Waymo-optimal values.** Tune to your compute, shard count and validation metrics.
 
-## Actual experiment results
+## Experimental results and extended-training targets
 
-**These results are synthetic only.** A CPU run completed four training epochs on 192 procedural mixed-motion scenes and used a disjoint 48-scene validation set and a disjoint 48-scene test set.
+### Completed synthetic experiment
 
-### Held-out synthetic test: average displacement error at 8 seconds
+We trained the latent transformer with a history-only kinematic prior for **4 CPU epochs** on **192 synthetic driving scenes**, using separate **48-scene validation** and **48-scene test** sets. The synthetic generator covers straight, turning, and accelerating agents. These results test the implementation, **not** real-world Waymo forecasting performance.
 
-| Method | Top-1 ADE (m) ↓ | Oracle minADE (m) ↓ | Endpoint within 8 m ↑ |
+| Method | Top-1 ADE over 8 s (m) ↓ | Oracle minADE over 8 s (m) ↓ | Endpoint within 8 m ↑ |
 |---|---:|---:|---:|
 | Constant velocity | 5.404 | 5.404 | 36.79% |
-| Constant turn-rate/acceleration | **0.327** | 0.327 | 98.82% |
-| Latent transformer + physics prior (3 modes) | 0.361 | **0.287** | 98.82% |
+| Constant turn-rate/acceleration | **0.327** | 0.327 | **98.82%** |
+| Latent transformer + physics prior (3 modes) | 0.361 | **0.287** | **98.82%** |
 
-The model improves **best-of-3 multimodal forecasting**, but its highest-confidence mode is **not yet better** than the strong kinematic baseline. The simple baseline is unusually strong on this particular synthetic motion generator. This is not evidence of real-world trajectory forecasting accuracy.
+Our three-mode model reduced **oracle minADE by 12.2%** relative to the turn-rate/acceleration baseline. The highest-confidence mode (0.361 m ADE) did **not** beat that strong baseline (0.327 m), so improving mode ranking is an open task. Training loss decreased from **0.618 to 0.459**, and validation top-1 ADE decreased from **0.433 to 0.410 m** across the four epochs. This short run alone cannot establish generalization to Waymo.
 
-Train loss fell from **0.618 to 0.459**, while validation top-1 ADE@8s fell from **0.433 to 0.410 m** over four epochs. Thus no validation regression was observed in this short test; no guarantee of generalization or absence of overfitting follows from that observation.
+### Expected full-scale Waymo training (targets, not measured results)
 
-Full results, the initial unsuccessful physics-free experiment, the revised experiment, measured metrics and exact reproducibility commands are documented in **[docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)**. Machine-readable test metrics are in `docs/synthetic_test_metrics.json`.
+The full training configuration uses a **128-dimensional transformer**, **16 scene latents**, **6 predicted modes**, **batch size 24**, **up to 100 epochs**, mixed-precision CUDA training, EMA checkpointing, and early stopping. The following values are illustrative **engineering goals** for a successful extended run, **not** metrics from this repository's completed experiment.
+
+| Metric | Planning range | Ambitious target |
+|---|---:|---:|
+| GPU training duration | 12–24 hours | 16 hours on A100 (budget) |
+| Short-horizon state accuracy (1–3 s) | 75–85% | 85% |
+| Long-horizon state accuracy (5–8 s) | 40–55% | 55% |
+| Oracle minADE@6, 8-second horizon | 0.90–1.30 m | 0.85 m |
+| Oracle minFDE@6, 8-second horizon | 1.8–2.8 m | 1.6 m |
+
+**Interpretation:** Accuracy percentages require a fixed spatial-error threshold, target-agent population, and time aggregation before they can be evaluated. The repository's custom hit-rate thresholds are defined below; they are not interchangeable with official Waymo metrics. GPU runtime depends on scenario count, storage throughput, hardware, and early stopping. The targets above are not claims of training completed on an A100 or any other GPU.
+
+### Time-resolved evaluation
+
+The model observes **11 frames (1 second of history plus the current frame)** and predicts **80 future frames at 10 Hz**, enabling evaluation at **1, 3, 5, and 8 seconds**. `src/lwm/metrics.py` supports horizon-specific ADE, FDE, and hit rates; the current recorded report does **not** include separate measured short-/long-horizon accuracy values. Run the evaluator on a labeled Waymo validation split to populate these metrics.
+
+Recorded configurations, failed and successful synthetic trials, and exact reproduction commands are in **[docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)**. Machine-readable synthetic test metrics are in `docs/synthetic_test_metrics.json`.
 
 ## Evaluation and correct terminology
 
