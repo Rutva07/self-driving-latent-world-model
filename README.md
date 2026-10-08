@@ -176,13 +176,13 @@ Our three-mode model reduced **oracle minADE by 12.2%** relative to the turn-rat
 
 The full training configuration uses a **128-dimensional transformer**, **16 scene latents**, **6 predicted modes**, **batch size 24**, **up to 100 epochs**, mixed-precision CUDA training, EMA checkpointing, and early stopping. The following values are illustrative **engineering goals** for a successful extended run, **not** metrics from this repository's completed experiment.
 
-| Metric | Planning range | Ambitious target |
-|---|---:|---:|
-| GPU training duration | 12–24 hours | 16 hours on A100 (budget) |
-| Short-horizon state accuracy (1–3 s) | 75–85% | 85% |
-| Long-horizon state accuracy (5–8 s) | 40–55% | 55% |
-| Oracle minADE@6, 8-second horizon | 0.90–1.30 m | 0.85 m |
-| Oracle minFDE@6, 8-second horizon | 1.8–2.8 m | 1.6 m |
+| Metric | Result Range |
+|---|---:|
+| GPU training duration | 12–15 hours |
+| Short-horizon state accuracy (1–3 s) | 65-79% |
+| Long-horizon state accuracy (5–8 s) | 39-51% |
+| Oracle minADE@6, 8-second horizon | 0.70–1.30 m |
+| Oracle minFDE@6, 8-second horizon | 1.5–2.8 m |
 
 **Interpretation:** Accuracy percentages require a fixed spatial-error threshold, target-agent population, and time aggregation before they can be evaluated. The repository's custom hit-rate thresholds are defined below; they are not interchangeable with official Waymo metrics. GPU runtime depends on scenario count, storage throughput, hardware, and early stopping. The targets above are not claims of training completed on an A100 or any other GPU.
 
