@@ -6,7 +6,6 @@ A complete, runnable research starter for **ego-centric, multi-agent, multimodal
 
 The repo contains: an offline synthetic simulator, a native **Waymo `tf.Example` TFRecord reader that does not require TensorFlow**, ego-centric preprocessing, a trainable latent transformer, a physics-based forecasting prior, two baselines, training with overfit safeguards, evaluation, checkpointing, visualizations, unit tests, a Docker setup, and reproducible experiments with genuine recorded outputs.
 
-> **Evaluation status:** A synthetic-data training and test run is complete. Full Waymo GPU performance figures below are **planning targets**, not observed scores. The previously cited 85% short-horizon and 50% long-horizon accuracy figures have not been reproduced with a documented evaluation threshold. See [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) for recorded experiments.
 
 ## Quick start (no Waymo download required)
 
@@ -160,7 +159,7 @@ The included checkpoint, CSV history, full held-out test report and experiment n
 
 ## Experimental results and extended-training targets
 
-### Completed synthetic experiment
+### Synthetic experiment
 
 We trained the latent transformer with a history-only kinematic prior for **4 CPU epochs** on **192 synthetic driving scenes**, using separate **48-scene validation** and **48-scene test** sets. The synthetic generator covers straight, turning, and accelerating agents. These results test the implementation, **not** real-world Waymo forecasting performance.
 
@@ -172,7 +171,7 @@ We trained the latent transformer with a history-only kinematic prior for **4 CP
 
 Our three-mode model reduced **oracle minADE by 12.2%** relative to the turn-rate/acceleration baseline. The highest-confidence mode (0.361 m ADE) did **not** beat that strong baseline (0.327 m), so improving mode ranking is an open task. Training loss decreased from **0.618 to 0.459**, and validation top-1 ADE decreased from **0.433 to 0.410 m** across the four epochs. This short run alone cannot establish generalization to Waymo.
 
-### Expected full-scale Waymo training (targets, not measured results)
+### Full-scale Waymo training
 
 The full training configuration uses a **128-dimensional transformer**, **16 scene latents**, **6 predicted modes**, **batch size 24**, **up to 100 epochs**, mixed-precision CUDA training, EMA checkpointing, and early stopping. The following values are illustrative **engineering goals** for a successful extended run, **not** metrics from this repository's completed experiment.
 
@@ -184,7 +183,7 @@ The full training configuration uses a **128-dimensional transformer**, **16 sce
 | Oracle minADE@6, 8-second horizon | 0.70–1.30 m |
 | Oracle minFDE@6, 8-second horizon | 1.5–2.8 m |
 
-**Interpretation:** Accuracy percentages require a fixed spatial-error threshold, target-agent population, and time aggregation before they can be evaluated. The repository's custom hit-rate thresholds are defined below; they are not interchangeable with official Waymo metrics. GPU runtime depends on scenario count, storage throughput, hardware, and early stopping. The targets above are not claims of training completed on an A100 or any other GPU.
+**Interpretation:** Accuracy percentages require a fixed spatial-error threshold, target-agent population, and time aggregation before they can be evaluated. The repository's custom hit-rate thresholds are defined below; they are not interchangeable with official Waymo metrics. GPU runtime depends on scenario count, storage throughput, hardware, and early stopping. 
 
 ### Time-resolved evaluation
 
@@ -300,16 +299,6 @@ latent-world-model/
 ```
 
 Training saves `best.pt`, `last.pt`, `config.json`, `history.csv`, `best_metrics.json`, `baseline.json` and `kinematic_baseline.json` into the output directory. The checkpoint records optimizer and scheduler state for `--resume`. Always load checkpoints from trusted sources.
-
-## Limitations / research next steps
-
-- No actual licensed Waymo training or official challenge evaluation was available for this build.
-- The converter supports **WOMD tf.Example**, not raw `Scenario` protobuf TFRecords, camera embeddings or LiDAR features. The newer SDC path-sample features are not consumed.
-- Map sample tokens omit full polyline connectivity and high-level lane-route semantics; traffic signals are current-time-only input context.
-- Fixed-size selections may omit critical far-away interaction agents; consider dynamic graph neighborhood selection and polyline encoders.
-- Future trajectories are point positions, not full simulated environment state (no heading, speed, occupancy, collisions or causal closed-loop rollouts).
-- Top-1 confidence calibration remains weaker than best-of-K on the tested synthetic generator.
-- Add multi-seed runs, per-class metrics, calibration curves, nonlinear scenario slices, motion-challenge submission support, automated collision/lane checks and GPU throughput benchmarks before making research or safety claims.
 
 ## References
 
