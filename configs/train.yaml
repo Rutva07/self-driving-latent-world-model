@@ -1,0 +1,27 @@
+seed: 42
+model:
+  d_model: 128
+  heads: 4
+  temporal_layers: 2
+  latent_layers: 2
+  num_latents: 16
+  num_modes: 6
+  dropout: 0.12
+  history_steps: 11
+  future_steps: 80
+train:
+  epochs: 100
+  batch_size: 24
+  num_workers: 4
+  lr: 0.0003
+  min_lr_ratio: 0.05
+  warmup_steps: 200
+  weight_decay: 0.02
+  grad_clip: 1.0
+  patience: 18
+  augment: true
+  amp: true
+  ema_decay: 0.995
+  loss_confidence: 0.15
+  loss_fde: 0.2
+  log_every: 20
